@@ -1,7 +1,7 @@
 export AUTOJUMP_SOURCED=1
 
 # set user installation paths
-if [[ -d ~/.autojump/ ]]; then
+if [[ -d ~/.autojump/ ]] && [[ $PATH != *"autojump"* ]]; then
     export PATH=~/.autojump/bin:"${PATH}"
 fi
 
