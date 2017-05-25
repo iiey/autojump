@@ -54,6 +54,14 @@ esac
 
 # default autojump command
 j() {
+    if [[ -z ${1} ]] && type fzf &> /dev/null; then
+        local dir=$(autojump --stat | sed '/___/,$d' | cut -f 2 |   #use only second column
+                    sed '/rvm\/copy/d' |                            #ignore paths
+                    fzf --tac --no-sort)
+        [ -d "$dir" ] && cd "$dir"
+        return
+    fi
+
     if [[ ${1} == -* ]] && [[ ${1} != "--" ]]; then
         autojump ${@}
         return
