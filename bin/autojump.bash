@@ -97,7 +97,12 @@ jo() {
         return
     fi
 
-    output="$(autojump ${@})"
+    if [[ ${1} == "." ]]; then
+        output=$(pwd)
+    else
+        output="$(autojump ${@})"
+    fi
+
     if [[ -d "${output}" ]]; then
         case ${OSTYPE} in
             linux*)
