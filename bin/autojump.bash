@@ -20,16 +20,38 @@ if [[ ! -d "$(dirname ${AUTOJUMP_ERROR_PATH})" ]]; then
 fi
 
 
+# fzf completion helper
+_autojump_fzf() {
+    #--stat show the jumping list with increasing weight from top to bottom
+    #fzf: reverse (tac) no sort to display most recently used directories first
+    autojump --stat | sed '/___/,$d' | cut -f 2 |       #use only second column
+        sed '/rvm\/copy/d' |                            #ignore paths
+        fzf --tac --no-sort --height 40% \
+            --preview-window=right --preview="tree {} -L 1 -C | head -100"
+}
+
 # enable tab completion
+#https://johnlane.ie/injecting-terminal-input.html
+#to redraw line after fzf closes (printf '\e[5n')
+#set -o emacs
+[[ $- == *i*  ]] && bind '"\e[0n": redraw-current-line'
 _autojump() {
-        local cur
-        cur=${COMP_WORDS[*]:1}
-        comps=$(autojump --complete $cur)
-        while read i; do
-            COMPREPLY=("${COMPREPLY[@]}" "${i}")
-        done <<EOF
-        $comps
-EOF
+        COMPREPLY=()
+        local comps
+        #use bash function to get current word
+        local cur && _get_comp_words_by_ref cur
+
+        #support fzf if available, trigger with empty input <tab>
+        if [ -z "$cur" ] && type fzf &> /dev/null; then
+            comps=$(_autojump_fzf)
+        #otherwise use classic complete
+        else
+            comps=$(autojump --complete $cur)
+        fi
+
+        for i in $comps; do COMPREPLY=("${COMPREPLY[@]}" "${i}"); done
+        #refresh one lines
+        printf '\e[5n'
 }
 complete -F _autojump j
 
@@ -55,9 +77,7 @@ esac
 # default autojump command
 j() {
     if [[ -z ${1} ]] && type fzf &> /dev/null; then
-        local dir=$(autojump --stat | sed '/___/,$d' | cut -f 2 |   #use only second column
-                    sed '/rvm\/copy/d' |                            #ignore paths
-                    fzf --tac --no-sort)
+        local dir=$(_autojump_fzf)
         [ -d "$dir" ] && cd "$dir"
         return
     fi
