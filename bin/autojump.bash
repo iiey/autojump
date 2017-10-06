@@ -106,7 +106,7 @@ jo() {
     if [[ -d "${output}" ]]; then
         case ${OSTYPE} in
             linux*)
-                xdg-open "${output}"
+                xdg-open "${output}" &> /dev/null || echo "Error: xdg-open could not open ${output}"
                 ;;
             darwin*)
                 open "${output}"
